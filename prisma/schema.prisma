@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model company {
+  id          String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String     @db.VarChar(255)
+  description String?    @db.VarChar(255)
+  image       String?    @db.VarChar(255)
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime   @default(now()) @db.Timestamp(6)
+  user_id     String     @db.Uuid
+  tenant_id   String     @db.VarChar(255)
+  user        user       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  property    property[]
+}
+
+model maintenance_schedule {
+  id               String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  start_date       DateTime           @db.Date
+  end_date         DateTime           @db.Date
+  property_id      String             @db.Uuid
+  created_at       DateTime           @default(now()) @db.Timestamp(6)
+  updated_at       DateTime           @default(now()) @db.Timestamp(6)
+  property         property           @relation(fields: [property_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  maintenance_task maintenance_task[]
+}
+
+model maintenance_task {
+  id                   String               @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  description          String               @db.VarChar(255)
+  status               String               @db.VarChar(255)
+  schedule_id          String               @db.Uuid
+  created_at           DateTime             @default(now()) @db.Timestamp(6)
+  updated_at           DateTime             @default(now()) @db.Timestamp(6)
+  maintenance_schedule maintenance_schedule @relation(fields: [schedule_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model property {
+  id                   String                 @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  address              String                 @db.VarChar(255)
+  rent                 Int
+  company_id           String                 @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamp(6)
+  updated_at           DateTime               @default(now()) @db.Timestamp(6)
+  maintenance_schedule maintenance_schedule[]
+  company              company                @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supply_order         supply_order[]
+  tenant               tenant[]
+}
+
+model rent_payment {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  amount       Int
+  payment_date DateTime @db.Date
+  tenant_id    String   @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @default(now()) @db.Timestamp(6)
+  tenant       tenant   @relation(fields: [tenant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model supply_order {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  item_name   String   @db.VarChar(255)
+  quantity    Int
+  property_id String   @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  property    property @relation(fields: [property_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tenant {
+  id              String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name      String         @db.VarChar(255)
+  last_name       String         @db.VarChar(255)
+  contact_details String         @db.VarChar(255)
+  rent_amount     Int
+  property_id     String         @db.Uuid
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime       @default(now()) @db.Timestamp(6)
+  rent_payment    rent_payment[]
+  property        property       @relation(fields: [property_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String    @unique @db.VarChar(255)
+  firstName   String?   @db.VarChar(255)
+  lastName    String?   @db.VarChar(255)
+  roq_user_id String    @db.VarChar(255)
+  tenant_id   String    @db.VarChar(255)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  company     company[]
+}
